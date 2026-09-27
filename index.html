@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bee Download — TikTok sans logo</title>
+<style>
+  :root{
+    --bg:#121013;
+    --bg-panel:#1b181c;
+    --gold:#d8a94c;
+    --gold-dim:#8a7038;
+    --text:#f3ede1;
+    --text-dim:#a89f92;
+    --danger:#c9564a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -10%, rgba(216,169,76,0.10), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;
+    justify-content:center;
+    padding:0 20px 60px;
+  }
+  main{width:100%;max-width:480px;}
+  header{padding:48px 0 28px;text-align:left;}
+  header .mark{
+    font-size:13px;
+    letter-spacing:0.02em;
+    color:var(--gold-dim);
+    margin-bottom:10px;
+  }
+  h1{
+    font-size:30px;
+    line-height:1.15;
+    margin:0;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--gold);}
+  p.sub{color:var(--text-dim);font-size:15px;margin:14px 0 0;line-height:1.5;}
+  .tg-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin-top:18px;
+    padding:10px 16px;
+    border-radius:999px;
+    border:1px solid #34c9eb44;
+    color:#5fcdf0;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+  }
+  .tg-link::before{
+    content:"";
+    width:8px;height:8px;
+    border-radius:50%;
+    background:#34c9eb;
+    flex-shrink:0;
+  }
+
+  form{display:flex;gap:8px;margin-top:28px;}
+  input[type=text]{
+    flex:1;
+    background:var(--bg-panel);
+    border:1px solid #2c2830;
+    color:var(--text);
+    padding:15px 16px;
+    border-radius:10px;
+    font-size:15px;
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--gold-dim);}
+  input[type=text]::placeholder{color:#5c5650;}
+  button{
+    background:var(--gold);
+    color:#1a1610;
+    border:none;
+    padding:0 22px;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button:disabled{opacity:0.5;}
+
+  #status{
+    margin-top:16px;
+    font-size:14px;
+    color:var(--text-dim);
+    min-height:20px;
+  }
+  #status.error{color:var(--danger);}
+
+  #result{
+    display:none;
+    margin-top:26px;
+    background:var(--bg-panel);
+    border:1px solid #2c2830;
+    border-radius:16px;
+    overflow:hidden;
+    animation:rise 0.35s ease;
+  }
+  @keyframes rise{
+    from{opacity:0;transform:translateY(8px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  #result video{
+    width:100%;
+    max-height:520px;
+    display:block;
+    background:#000;
+  }
+  #result .info{padding:18px 20px 20px;}
+  #result .title{font-size:15px;line-height:1.45;margin:0 0 4px;}
+  #result .author{font-size:13px;color:var(--text-dim);margin:0;}
+  #result .actions{display:flex;gap:10px;margin-top:16px;}
+  #result .actions button, #result .actions a{
+    flex:1;
+    text-align:center;
+    padding:13px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    text-decoration:none;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-primary{background:var(--gold);color:#1a1610;}
+  .btn-secondary{background:transparent;color:var(--text);border:1px solid #3a3540 !important;}
+
+  footer{margin-top:40px;text-align:center;color:#4d473f;font-size:12px;}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark">Bee Download</div>
+    <h1>Colle un lien TikTok,<br>reçois la vidéo <span>sans logo</span>.</h1>
+    <p class="sub">Fonctionne aussi directement dans notre bot Telegram, avec le même moteur.</p>
+    <a href="https://t.me/Beedawbot" target="_blank" rel="noopener" class="tg-link">
+      Ouvrir le bot Telegram
+    </a>
+  </header>
+
+  <form id="form">
+    <input type="text" id="urlInput" placeholder="https://www.tiktok.com/@..." autocomplete="off">
+    <button type="submit" id="submitBtn">Aller</button>
+  </form>
+
+  <div id="status"></div>
+
+  <div id="result">
+    <video id="video" controls playsinline></video>
+    <div class="info">
+      <p class="title" id="videoTitle"></p>
+      <p class="author" id="videoAuthor"></p>
+      <div class="actions">
+        <button class="btn-primary" id="downloadBtn">Télécharger</button>
+        <a class="btn-secondary" id="openBtn" target="_blank" rel="noopener">Ouvrir</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>Bee Download · sans watermark</footer>
+</main>
+
+<script>
+const FUNCTION_URL = "https://auzbestspfwjtityfucm.supabase.co/functions/v1/tiktok-download";
+
+const form = document.getElementById("form");
+const urlInput = document.getElementById("urlInput");
+const submitBtn = document.getElementById("submitBtn");
+const statusEl = document.getElementById("status");
+const resultEl = document.getElementById("result");
+const videoEl = document.getElementById("video");
+const titleEl = document.getElementById("videoTitle");
+const authorEl = document.getElementById("videoAuthor");
+const downloadBtn = document.getElementById("downloadBtn");
+const openBtn = document.getElementById("openBtn");
+
+function setStatus(msg, isError){
+  statusEl.textContent = msg || "";
+  statusEl.className = isError ? "error" : "";
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const url = urlInput.value.trim();
+  if(!url){ setStatus("Colle d'abord un lien TikTok.", true); return; }
+
+  resultEl.style.display = "none";
+  submitBtn.disabled = true;
+  setStatus("Récupération de la vidéo…");
+
+  try{
+    const res = await fetch(FUNCTION_URL, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+
+    if(!data.success){
+      throw new Error(data.error || "Échec du téléchargement");
+    }
+
+    videoEl.src = data.videoUrl;
+    videoEl.poster = data.cover || "";
+    titleEl.textContent = data.title || "Vidéo TikTok";
+    authorEl.textContent = data.author ? "@" + data.author : "";
+    openBtn.href = data.videoUrl;
+    downloadBtn.dataset.videoUrl = data.videoUrl;
+
+    resultEl.style.display = "block";
+    setStatus("");
+  }catch(err){
+    setStatus(err.message || "Une erreur est survenue.", true);
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+
+downloadBtn.addEventListener("click", async () => {
+  const videoUrl = downloadBtn.dataset.videoUrl;
+  downloadBtn.textContent = "…";
+  try{
+    const res = await fetch(videoUrl);
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "tiktok-video.mp4";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }catch{
+    window.open(videoUrl, "_blank");
+  }finally{
+    downloadBtn.textContent = "Télécharger";
+  }
+});
+</script>
+</body>
+</html>
